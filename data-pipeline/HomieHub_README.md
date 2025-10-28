@@ -13,8 +13,6 @@ The central orchestrator is the **Airflow DAG**: `homiehub_data_pipeline.py`.
 - **Tasks:** Extract → Transform → Save → Push Summary → Email Notification
 - **Key Outputs:** Processed CSVs stored under `/data/processed/`
 - **Scheduling:** Daily (configurable), with retries and email alerts
-- **Visualization:**
-
 ![](assets/2_homiehub_data_pipeline-graph.png)
 
 This DAG manages data flow dependencies, ensuring reliable task execution and logging at every stage.
