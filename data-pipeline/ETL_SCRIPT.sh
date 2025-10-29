@@ -45,7 +45,7 @@ source venv/bin/activate
 
 
 # Run ETL pipeline
-python -m pipelines.etl_pipeline
+python -m pipelines.etl
 
 # Check exit status
 if [ $? -eq 0 ]; then
