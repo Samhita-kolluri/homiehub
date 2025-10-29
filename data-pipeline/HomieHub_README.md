@@ -1,211 +1,236 @@
-# HomieHub ETL Data Pipeline
 
-## 1. Project Overview
-HomieHub is an automated, end-to-end data pipeline built to process unstructured housing-related data (such as WhatsApp listings) into structured, verified, and normalized datasets ready for downstream analysis. 
-The project demonstrates modern **MLOps practices** including modular code organization, Airflow-based orchestration, Dockerized reproducibility, and automated logging and notifications.
+#  **HomieHub ETL Data Pipeline**
 
 ---
 
-## 2. DAG Overview and Architecture
-The central orchestrator is the **Airflow DAG**: `homiehub_data_pipeline.py`.
+## **1. Project Overview**
+HomieHub is an automated, end-to-end ETL pipeline designed to process **unstructured housing-related data (such as WhatsApp listings)** into **structured, verified, and normalized datasets** ready for analysis.  
 
-- **Tasks:** Extract → Transform → Save → Push Summary → Email Notification
-- **Key Outputs:** Processed CSVs stored under `/data/processed/`
-- **Scheduling:** Daily (configurable), with retries and email alerts
-- **Visualization:**
+This project demonstrates **modern MLOps practices**, including:
+- Modular and reusable code structure
+- **Airflow-based orchestration**
+- **Dockerized reproducibility**
+- Automated **logging, versioning, and testing**
 
+---
+
+## Key Features
+
+* Modular ETL code: `extraction`, `ingestion`, `preprocessing`, and `utils`
+* Reproducible workflow using **Docker** and **Airflow**
+* Logging and alert system for monitoring pipeline execution
+* Data versioning using **DVC**
+* SMTP email notifications for ETL summary and logs
+* Supports anomaly detection and schema validation in preprocessing
+
+---
+
+## Folder Structure
+
+```text
+.
+├── __init__.py
+├── assets/
+│   ├── 1_grant_chart.png
+│   └── 2_homiehub_data_pipeline-graph.png
+├── config/
+├── dags/
+│   ├── __init__.py
+│   ├── airflow_etl.py       # old (deprecated)
+│   └── homiehub_data_pipeline.py
+├── data/
+│   ├── features/
+│   ├── processed/
+│   └── raw/
+├── docker-compose.yaml       # DO NOT PUSH TO GIT (use locally)
+├── docs/
+├── logs/
+├── plugins/
+├── readme.md
+├── requirements.txt
+├── setup.sh
+├── src/
+│   ├── __init__.py
+│   ├── extraction/
+│   │   ├── __init__.py
+│   │   └── whatsapp_data_extraction.py
+│   ├── ingestion/
+│   │   ├── __init__.py
+│   │   └── data_handlers/
+│   │       ├── __init__.py
+│   │       └── csv_extractor.py
+│   ├── preprocessing/
+│   │   ├── __init__.py
+│   │   └── transform.py
+│   └── utils/
+│       ├── __init__.py
+│       └── io.py
+├── test/
+│   └── __init__.py
+│   └── __test_data_loading.py
+│   └── __init__.py
+│   └── __init__.py
+└── working_data/
+    └── __init__.py
+```
+
+---
+
+
+## **2. Pipeline Architecture**
+
+
+### **2.1 End-to-End Pipeline Flow**
+The following flowchart illustrates the **complete ETL pipeline**, detailing how data moves from unstructured sources (e.g., WhatsApp exports or Facebook Marketplace listings) through Airflow-orchestrated tasks into cleaned, versioned outputs:
+
+![](assets/0_flowchart_datapipeline.png)
+
+**Flow Overview:**
+- **Stage 1 – Data Acquisition:** Collects housing data from WhatsApp, Facebook Marketplace, or synthetic test datasets.  
+- **Stage 2 – Data Cleaning & Preprocessing:** Handles missing values, removes duplicates, and performs outlier treatment.  
+- **Stage 3 – Data Transformation:** Applies feature engineering, categorical normalization, and value conversions.  
+- **Stage 4 – Processed Storage:** Stores validated outputs in `data/processed/`, logs in `logs/`, and triggers summary emails.  
+
+All stages are orchestrated by the Airflow DAG: `homiehub_data_pipeline.py`.
+
+---
+
+
+### **2.1 DAG Overview**
+The entire workflow is orchestrated through **Apache Airflow** using the DAG file:  
+`dags/homiehub_data_pipeline.py`.
+
+**Tasks:**  
+`Extract → Ingest → Transform → Save → Push Summary → Email Notification`
+
+**Key Features:**
+- Automatic scheduling (daily or manual)
+- Retries and alert notifications on failure
+- Modular task definitions for reproducibility
+
+**Visualization:**
 ![](assets/2_homiehub_data_pipeline-graph.png)
 
-This DAG manages data flow dependencies, ensuring reliable task execution and logging at every stage.
-
 ---
 
-## 3. Gantt Chart and Workflow Visualization
-The pipeline’s runtime flow is visualized below, showing the sequential and parallel dependencies of tasks:
+### **2.2 Workflow Timeline**
+The runtime dependencies and task sequence are represented below:
 
 ![](assets/1_grant_chart.png)
 
----
+This Gantt chart visualizes the task execution order and timing dependencies within the Airflow DAG.
 
-## 4. Data Acquisition and Ingestion
+**homiehub_data_pipeline DAG** consists of the following steps:
 
-The pipeline begins by extracting unstructured housing data from WhatsApp chat exports using an NLP-based extraction module:
-
-- **File:** `src/extraction/whatsapp_data_extraction.py`
-- **Description:** Parses WhatsApp text files and converts conversational posts into structured CSVs (`structured_listings_nlp.csv`).
-- **Output Directory:** `/data/raw/`
-
-Once extracted, the data is ingested via:
-- **File:** `src/ingestion/data_handlers/csv_extractor.py`
-- **Purpose:** Safely reads CSVs with custom NA handling and validates file availability before transformation.
-- **Output:** A `pandas` DataFrame ready for downstream preprocessing.
-
-This ensures a reproducible and traceable data ingestion process from raw text to structured CSVs.
+1. **Load Raw Listings** – reads raw CSV into a temporary file
+2. **Transform Listings** – data cleaning, preprocessing, and feature engineering
+3. **Save Processed Listings** – outputs cleaned CSV to `data/processed/`
+4. **Finalize ETL** – prints ETL completion in logs
+5. **Push Summary** – generates ETL summary for XCom and notifications
+6. **Send Summary Email** – sends success/failure summary via SMTP
+7. **Send Logs Email** – emails logs for the current DAG run
 
 ---
 
-## 5. Data Preprocessing and Transformation
+## **3. Data Acquisition and Ingestion**
 
-The pre-processing step standardizes and cleans the structured CSV:
+### **Extraction**
+- **Script:** `src/extraction/whatsapp_data_extraction.py`
+- **Purpose:** Converts unstructured WhatsApp chat exports into structured CSVs.  
+- **Output:** `data/raw/structured_listings_nlp.csv`
 
-- **File:** `src/preprocessing/transform.py`
-- **Tasks:**
-  - Normalizes categorical features (`gender`, `accom_type`, `food_pref`, `area`).
-  - Converts monetary and numeric fields (`rent_amount_num`, `lease_duration_months`, `distance_to_campus_miles`).
-  - Parses boolean indicators (`furnished_bool`, `utilities_included_bool`, etc.).
-  - Generates standardized ISO date formats and derived columns.
-- **Output Directory:** `/data/processed/`
+### **Ingestion**
+- **Script:** `src/ingestion/data_handlers/csv_extractor.py`
+- **Purpose:** Reads the structured CSV safely into a pandas DataFrame.  
+- **Validations:**  
+  - Confirms file presence and schema consistency  
+  - Applies safe NA handling and type inference  
 
-All transformations are modular and deterministic to guarantee reproducibility across pipeline runs.
-
----
-
-
-## 6. Logging and Monitoring
-
-Airflow’s native logging system is enhanced with custom notifications and log bundling.
-
-- Each task logs execution status and runtime metadata (start time, end time, duration).
-- A summary of the run, including **rows processed and validation statistics**, is sent via email at the end of each run.
-- Failure and success states are captured separately, with corresponding log attachments.
-- Logs for all tasks are bundled and sent automatically to the pipeline administrator.
-
-### Example Notifications and Logs:
-
-#### Successful Completion Email
-![ETL Completion](assets/3_email_logging1.jpg)
-> “ETL Completed Successfully – Processed 25 Rows.”
-
-####  Failure Alert Email
-![Airflow Failure Alert](assets/4_email_log2.jpg)
-> Email Operator alerts triggered on failed runs with detailed exception trace.
-
-####  ETL Log Attachments
-![ETL Logs](assets/5_email_log3.jpg)
-> All task logs (attempt logs per operator) automatically attached for audit and troubleshooting.
+**Result:** A traceable, clean ingestion process from raw text → structured CSV → pandas DataFrame.
 
 ---
 
+## **4. Data Preprocessing and Transformation**
 
-Airflow’s native logging system is enhanced with custom notifications and log bundling:
+### **Transformation**
+- **Script:** `src/preprocessing/transform.py`
+- **Core Tasks:**
+  - Normalizes categorical fields (`gender`, `accom_type`, `food_pref`, `area`)
+  - Converts monetary fields to numeric (`rent_amount_num`)
+  - Parses boolean flags (`furnished_bool`, `utilities_included_bool`)
+  - Parses dates and derives ISO timestamps (`timestamp_iso`)
+  - Computes helper fields like `lease_duration_months`
 
-- Each task logs execution status and time to `logs/`.
-- A summary of the run (rows processed, start/end time) is sent via email.
-- Task logs are bundled and attached to the email for reference.
-- Failure alerts are automatically triggered with detailed error information.
+**Output:**  
+A fully cleaned, analysis-ready dataset stored in `/data/processed/`.
 
-**Example Success Notification:**
-> “ETL Completed Successfully – Processed 25 Rows.”
-
-**Example Failure Notification:**
-> “Airflow Alert – Task Failure (SMTP Host Unreachable).”
-
----
-
-## 7. Reproducibility and Containerization
-
-Reproducibility is ensured through containerized deployment using Docker.
-
-- **Files:**
-  - `docker-compose.yaml`: Launches Airflow services.
-  - `setup.sh`: Automates environment setup.
-  - `requirements.txt`: Captures dependency versions.
-
-All configurations and data paths are abstracted through `src/utils/io.py`, maintaining consistent directory resolution across environments.
+**Reproducibility:**  
+Every transformation step is deterministic — identical input yields identical output.
 
 ---
 
-## 8. Testing and Validation
+## **5. Error Handling and Resilience**
 
-Automated tests ensure correctness of core data processing functions.
-
-- **Framework:** `pytest`
-- **Test Modules:**
-  - `test/test_transform.py` – validates transformations (dates, numerics, booleans).
-  - `test/test_schema.py` – ensures schema consistency across pipeline runs.
-
-**Run Command:**
-```bash
-pytest -v
-```
-Testing confirms stable schema and value integrity between raw and processed datasets.
-
-*(If tests are not yet implemented, placeholders have been added to be integrated in the next iteration.)*
+- **Retries:** Configured per task (2 attempts, 3-minute delay)
+- **Failure Alerts:** Triggered via Airflow `EmailOperator`
+- **Graceful Degradation:**  
+  - If extraction fails, the DAG halts with descriptive logs  
+  - Empty data files still maintain headers for downstream compatibility
+- **Success Alerts:** Summaries with record counts sent via email upon completion
 
 ---
 
-## 9. Data Versioning with DVC
+## **6. Logging and Monitoring**
 
-To maintain data lineage and reproducibility, **DVC (Data Version Control)** will be used to track all dataset versions.
+The pipeline leverages **Airflow’s built-in logging and monitoring**, enhanced with email notifications.
 
-- **Setup:**
-```bash
-dvc init
-dvc add data/raw data/processed
-dvc remote add -d homiehub_drive <remote-url>
-```
-- **Tracked Artifacts:** Raw and processed CSVs
-- **Configuration Files:** `.dvc`, `dvc.yaml`
-- **Purpose:** Ensures consistent snapshots of datasets tied to specific DAG runs or Git commits.
+### **Logging Features**
+- Each task logs start/end timestamps and row counts.
+- Logs are saved under `logs/` and attached to summary emails.
+- Task-level logs can also be viewed directly in the Airflow UI.
 
+### **Monitoring**
+- Airflow tracks task status and run duration.
+- Completion summaries and statistics are emailed to administrators.
+
+**Example Logs & Notifications:**
+| Type | Image | Description |
+|------|--------|-------------|
+|  Success Email | ![](assets/3_email_logging1.jpg) | “ETL Completed Successfully – Processed 25 Rows.” |
+|  Failure Alert | ![](assets/4_email_log2.jpg) | Detailed trace for failure cases |
+|  Log Bundle | ![](assets/5_email_log3.jpg) | Attached `.log` files per task for auditing |
+
+# SMTP Email Configuration
+
+Airflow `smtp_default` connection in Airflow UI. Go to admin, connections and add `smtp_default` connection. Don’t use your Gmail login password you need an App Password.
+
+| Field       | Value                                                                             |
+| ----------- | --------------------------------------------------------------------------------- |
+| Conn Id     | smtp_default                                                                      |
+| Conn Type   | SMTP                                                                              |
+| Host        | smtp.gmail.com                                                                    |
+| Port        | 587                                                                               |
+| Login       | (`your_email@gmail.com`) |
+| Password    | `your_app_password`                                                     |
+| Timeout     | 30                                                                                |
+| Retry Limit | 5                                                                                 |
+| TLS         | false                                                                             |
+| SSL         | true                                                                              |
+| Auth Type   | basic                                                                             |
 ---
 
-## 10. Metrics and Tracking
+## **7. Schema Validation and Data Quality**
 
-At the end of each pipeline run, a summary is generated and emailed automatically.
+HomieHub validates schema integrity and computes summary statistics automatically during ETL.
 
-**Metrics Captured:**
-- Number of rows processed
-- Start and end timestamps
-- Success/Failure status
-- Run ID and log file bundle
+### **Schema Checks**
+- Validates presence of all mandatory columns:  
+  `['timestamp', 'rent_amount', 'gender', 'accom_type', 'food_pref', 'area']`
+- Ensures data type consistency for numeric, boolean, and categorical columns.
+- Logs missing or unexpected columns as warnings.
 
-Future enhancements will include integration with **MLflow** to track additional metrics such as record distribution, error rates, and transformation latency.
-
----
-
-## 11. Error Handling and Notifications
-
-The DAG is configured with built-in retries and detailed email notifications.
-
-- **Retries:** 2 attempts per task with a 3-minute delay.
-- **Failure Alerts:** Triggered via `EmailOperator` upon task failure.
-- **Success Alerts:** Summary email confirms successful ETL completion.
-- **Log Bundling:** All per-task logs are zipped and emailed post-run.
-
-**Example Notifications:**
-- **Success Email:** “ETL Completed Successfully – Processed 25 Rows.”
-- **Failure Email:** “Airflow Alert – Task Failure (SMTP Host Unreachable).”
-
----
-
-
-## 14. Schema Validation and Statistics Generation
-
-HomieHub’s pipeline integrates automated **schema and data statistics generation** directly within the ETL workflow.
-
-While external libraries such as *Great Expectations* or *TensorFlow Data Validation (TFDV)* can be integrated, the current implementation already validates data quality through in-pipeline checks and automated summaries.
-
-### Key Implementations:
-- **Schema Validation:**
-  - During ingestion and transformation, the pipeline verifies the presence of all mandatory columns:
-    `['timestamp', 'rent_amount', 'gender', 'accom_type', 'food_pref', 'area']`
-  - Missing or unexpected columns trigger logged warnings and are flagged in the email summary.
-  - Datatype consistency is validated after transformation (numeric, boolean, categorical fields).
-
-- **Statistics Generation:**
-  - The pipeline computes key data statistics per run and embeds them in the **ETL Summary Email**:
-    - Total rows processed
-    - Null value counts per column
-    - Percentage of missing values
-    - Average, minimum, and maximum rent amount
-  - These metrics are written to the Airflow logs and attached to the summary email.
-
-- **Quality Assurance via Logs:**
-  - Each task logs schema shape, column counts, and transformation summaries.
-  - Logs are automatically bundled and sent to the pipeline administrator after every DAG run.
-
-### Example of Logged Statistics (from ETL summary email):
+### **Statistics Generation**
+Included automatically in the ETL summary email:
 ```
 ETL Summary:
 - Rows processed: 25
@@ -215,98 +240,126 @@ ETL Summary:
 - Outlier threshold breaches: 0
 ```
 
-These built-in validations and metrics provide automated, reproducible **data quality monitoring** at every pipeline run, ensuring that each dataset version meets the required schema integrity and consistency standards.
+These validations ensure high data quality, reproducibility, and schema stability across runs.
 
 ---
 
-## 12. Future Enhancements
+## **8. Testing and Validation**
 
+Automated tests ensure **robustness**, **reproducibility**, and **edge-case resilience** across the pipeline.
 
-- Add DVC tracking and remote configuration for dataset versioning.
-- Integrate `pytest` validation in CI/CD workflow.
-- Incorporate MLflow for run-level metric tracking.
-- Implement lightweight bias monitoring on demographic distributions.
-- Automate deployment on a cloud-hosted Airflow instance (e.g., Composer, MWAA).
+### **Framework**
+All tests are written in **pytest** and stored in `/tests/`.
+
+### **Modules Covered**
+| Test Script | Description |
+|--------------|--------------|
+| `test_data_extraction.py` | Validates extraction from GCS; checks schema, nulls, and data consistency. |
+| `test_data_loading.py` | Tests ingestion, GCS upload/download consistency, and data structure preservation. |
+| `test_data_transformation.py` | Unit-tests each preprocessing function (`_parse_money`, `_parse_bool`, `_parse_date`, etc.) and ensures correct column creation. |
+
+### **Execution**
+```bash
+pytest -v
+```
+
+### **Key Assertions**
+- Schema consistency between raw and processed datasets  
+- Correct parsing of numerics, booleans, and dates  
+- Deterministic outputs across repeated runs  
+- Robust handling of malformed or missing input data
 
 ---
 
-## 13. Conclusion
+## **9. Data Versioning and Reproducibility**
 
-HomieHub’s MLOps pipeline demonstrates a **fully automated, modular, and reproducible ETL workflow** built with Apache Airflow. 
-The system successfully processes raw, unstructured text into normalized, verified datasets ready for machine learning and analytical modeling.
+### **Data Version Control (DVC)**
+Used to version and reproduce datasets tied to specific DAG runs.
 
-This implementation aligns with industry MLOps best practices and covers every critical pipeline component from **data ingestion to orchestration and monitoring**.
+**Setup:**
+```bash
+dvc init
+dvc add data/raw data/processed
+dvc remote add -d homiehub_remote <remote-url>
+```
 
+**Purpose:**
+- Maintain dataset lineage
+- Guarantee reproducible pipeline states
+- Sync exact dataset versions across collaborators
 
-## **Reproducing This Project from GitHub**
+**Tracked Artifacts:** `data/raw/` and `data/processed/`
 
-1. **Clone the repository** and navigate into it:
+---
 
+## **10. Metrics and Run Tracking**
+
+At the end of each DAG run, the ETL summary captures:
+- Rows processed  
+- Null percentages  
+- Start/end timestamps  
+- Success/failure status  
+- Log bundle path  
+
+All metrics are included in the **email notification** for full traceability.
+
+---
+
+## **11. Reproducing the Project (from GitHub)**
+
+1. **Clone the repository:**
    ```bash
    git clone <your_repo_url>.git
    cd homiehub
    ```
 
-2. **Run the setup script** to install dependencies and prepare the environment:
-
+2. **Run the setup script:**
    ```bash
    bash setup.sh
    ```
 
-3. **Follow the printed next steps**:
-
+3. **Follow setup prompts:**
    ```bash
    echo "Next steps:"
-   echo "1. Ensure your WhatsApp export or structured housing CSV is placed under: data/raw/"
-   echo "2. Initialize Airflow (one-time setup): docker-compose up airflow-init"
+   echo "1. Place your WhatsApp export or structured CSV under: data/raw/"
+   echo "2. Initialize Airflow: docker-compose up airflow-init"
    echo "3. Start Airflow services: docker-compose up -d"
-   echo "4. Open Airflow UI: http://localhost:8080"
+   echo "4. Access Airflow UI: http://localhost:8080"
    ```
 
-4. **Add your input data**:  
-   Place your file in the correct folder:
+4. **Add your input data:**
    ```bash
-   cp <your_whatsapp_export_or_structured_listings.csv> data/raw/
+   cp <your_file>.csv data/raw/
    ```
 
-   - If you’re using a **WhatsApp chat export**, the extraction module will parse it automatically.  
-   - If you already have a **structured CSV**, the pipeline will skip extraction and proceed to ingestion and transformation.
+5. **Trigger the DAG in Airflow UI:**
+   - DAG ID: `homiehub_data_pipeline`
+   - Toggle ON → **Trigger DAG**
 
-5. **Trigger the DAG**:
+6. **Monitor progress and review emails/logs.**
 
-   - Open the Airflow UI at [http://localhost:8080](http://localhost:8080)  
-   - Navigate to **`homiehub_data_pipeline`**  
-   - Toggle it **ON** and click **Trigger DAG**
-
-6. **Monitor pipeline progress**:
-
-   - Task logs are stored under `logs/` and viewable in the Airflow UI  
-   - Success/failure summary emails (if configured) will be sent automatically to the alert email configured in your `.env` file
-
-7. **Verify output artifacts**:
-
-   - Extracted structured file: `data/raw/structured_listings_nlp.csv`  
-   - Processed final file: `data/processed/listings_processed.csv`  
-   - DAG run logs: `logs/dag_id=homiehub_data_pipeline/`  
-
-8. **DVC data versioning** (if enabled in the project):
-
-   - Pull tracked dataset versions before re-running the DAG:
-     ```bash
-     dvc pull
-     ```
-   - Push updates after successful runs:
-     ```bash
-     dvc add data/raw data/processed
-     dvc push
-     ```
-
-9. **Reproduce a clean deterministic run**:
+7. **DVC versioning:**
    ```bash
-   docker-compose down -v    # stop containers and remove Airflow state
+   dvc pull   # Get tracked data versions
+   dvc push   # Push updates after runs
+   ```
+
+8. **Re-run deterministically:**
+   ```bash
+   docker-compose down -v
    rm -rf logs/* data/processed/*
    docker-compose up -d --build
-   # Trigger the DAG again in the Airflow UI → outputs should match the previous run
    ```
 
 ---
+
+## **12. Future Enhancements**
+- Integrate DVC remotes for cloud-based data lineage.
+- Add CI/CD for automated testing.
+- Introduce lightweight drift monitoring on rent/area features.
+- Extend Airflow metrics with MLflow for run tracking.
+
+---
+
+## **13. Conclusion**
+HomieHub’s MLOps pipeline demonstrates a fully automated, modular, and reproducible ETL workflow built with Apache Airflow. The system successfully processes raw, unstructured text into normalized, verified datasets ready for machine learning and analytical modeling.
