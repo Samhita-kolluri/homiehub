@@ -1,0 +1,5 @@
+**/__pycache__
+**/GCP_Account_Key.json
+**logs/
+.env.local
+docker-compose.yaml

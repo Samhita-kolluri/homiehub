@@ -1,7 +1,6 @@
 import re
 import csv
 import spacy
-import os
 from spacy.matcher import PhraseMatcher
 from tqdm import tqdm
 
@@ -21,14 +20,9 @@ def extract_housing_listings(input_file):
         - relevant_listings.csv: Filtered housing-related messages
         - structured_listings_nlp.csv: Structured data with extracted fields
     """
-    output_dir = "./data/raw"
-    # Make sure folder exists
-    os.makedirs(output_dir, exist_ok=True)
-    # Full paths
-    output_file = os.path.join(output_dir, "structured_listings_nlp.csv")
-    filtered_file = os.path.join(output_dir, "relevant_listings.csv")
-    # output_file = "structured_listings_nlp.csv"
-    # filtered_file = "relevant_listings.csv"
+    
+    output_file = "homiehub_listings.csv"
+    filtered_file = "relevant_listings.csv"
     
     # print("Loading spaCy model...")
     nlp = spacy.load("en_core_web_trf")
