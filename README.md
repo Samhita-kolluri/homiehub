@@ -118,7 +118,7 @@ The `model-pipeline/` module handles AI-driven roommate matching using semantic 
 - [**Data Pipeline Documentation**](./data-pipeline/README.md) - Complete data and ETL pipeline guide
 - [**Setup Guide**](./data-pipeline/docs/setup_guide.md) - Installation and configuration
 - [**Scripts Usage**](./data-pipeline/docs/scripts_usage.md) - Automation scripts guide
-- [**Model Pipeline Documentation**](./model-pipeline/README.md) - Complete model pipeline guide
+- [**Model Pipeline Documentation**](./model-pipeline/readme.md) - Complete model pipeline guide
 
 ## Quick Start
 
@@ -228,7 +228,7 @@ MLOps course mentors, Apache Airflow, GCP, and the open-source community.
 For questions or collaboration:
 - Create an [issue](https://github.com/homiehub/homiehub/issues)
 - Review [data pipeline documentation](./data-pipeline/README.md)
-- Review [model pipeline documentation](./model-pipeline/README.md)
+- Review [model pipeline documentation](./model-pipeline/readme.md)
 
 ---
 > For comprehensive details about the implemented ETL system, refer to the [Data Pipeline Documentation](/data-pipeline/README.md), the [Setup Guide](/data-pipeline/docs/setup_guide.md), and the [Scripts Usage Guide](/data-pipeline/docs/scripts_usage.md).
