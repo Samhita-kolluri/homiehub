@@ -283,6 +283,32 @@ Metrics include:
 - Missing-embedding detection
 
 This ensures equitable access to housing recommendations for all users.
+## 10. Bias & Experiment Layer
+
+The HomieHub pipeline includes a **dedicated layer for fairness monitoring and experiment tracking** to ensure transparent, unbiased, and reproducible recommendations.
+
+- **Metrics Tracked:**
+  - Representation balance across sensitive attributes (gender, area, food preferences)
+  - Ranking parity (ensuring equitable top-N results)
+  - Statistical parity difference
+  - Missing-embedding detection
+- **Mitigation:** The system can resample or reweight data slices to reduce bias before generating recommendations.
+
+### Experiment Tracking
+- **Objective:** Monitor model performance and experiment reproducibility.
+- **Tools:** : GitHub Actions
+- **Tracked Metrics:**
+  - Model evaluation metrics (e.g., accuracy, f1-score, precision, recall)
+  - Slice-level performance metrics across sensitive features
+  - Experiment configurations (hyperparameters, embeddings used, feature weights)
+- **Benefits:** Enables comparison of model variants, reproducible experiments, and fair model selection.
+
+### Integration with Pipeline
+1. When user/room data is updated, the system logs experiment metrics.
+2. Recommendations are evaluated for fairness across demographic slices.
+3. Bias metrics and model evaluation results are stored in MLflow dashboards.
+4. Developers can visualize and compare experiments and fairness metrics to make informed decisions.
+
 
 ## **11. Conclusion**
 
