@@ -41,5 +41,13 @@ from app.api import agent_api
 app.include_router(agent_api.router)
 
 if __name__ == "__main__":
+    import os
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=4000, reload=True)
+
+    port = int(os.environ.get("PORT", 8080))  # Cloud Run injects this
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=port,
+        log_level="info"
+    )
