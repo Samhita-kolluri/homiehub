@@ -11,8 +11,8 @@ The model pipeline includes:
 
 ### **Core Services**
 
-* **LLM Agent** — Conversational interface powered by VertexAI Gemini + LangGraph
-* **Recommendation Service** — Vector similarity search + rule-based filtering
+* **LLM Agent** — Conversational interface powered by VertexAI Gemini for reasoning + LangGraph
+* **Recommendation Service** — custom embeddings trained on Firestore data + Vector similarity search + rule-based filtering
 * **User-Room Service** — User/room validation, CRUD, and embedding triggers
 
 ### **Supporting Infrastructure**
@@ -34,6 +34,7 @@ model-pipeline/
 ├── llm-agent/               # LLM-based chat interface
 ├── recommendation-service/  # Vector search + ranking engine
 └── user-room-service/       # CRUD + data validation + embeddings
+└── experiments/             # MLflow tracking, bias/fairness evaluation, hyperparameter tuning
 ```
 ---
 
@@ -201,6 +202,20 @@ Both users and rooms are converted into weighted embedding vectors.
 4. Firestore stores computed embeddings
 5. Recommendation service runs vector similarity
 
+### Bias & Fairness Checks
+
+* Each model version is evaluated across demographic and feature slices.
+* Metrics such as representation balance, ranking parity, and statistical parity differences are logged in MLflow.
+* Bias mitigation techniques (resampling, reweighting) are applied automatically if disparities are detected.
+
+
+### Model Training & Versioning
+
+* Training data is pulled from Firestore via the data pipeline.
+* Multiple model versions are trained and logged in MLflow.
+* Validation is performed on hold-out datasets; metrics logged include F1-score, accuracy, and slice-level fairness metrics.
+* The best-performing model is pushed to GCP Artifact Registry and MLflow Model Registry for version control.
+
 ---
 
 ## **7. Deployment Overview**
@@ -238,6 +253,21 @@ Both users and rooms are converted into weighted embedding vectors.
 * Strict input validation
 * Cloud Function auto-retry
 
+### Notifications & Alerts
+
+* CI/CD pipeline sends notifications on:
+  - Pipeline failures
+  - Completion of model training
+  - Bias violations
+  - Model rollback events
+
+![](assets/8-notify-ext.png)
+
+![](assets/8-notify-trans.png)
+
+![](assets/8-nofity-load.png)
+* Email integration is configured via GitHub Actions workflows.
+
 ---
 
 ## **9. Repo Structure**
@@ -266,23 +296,26 @@ model-pipeline/
 │   ├── Dockerfile
 │   └── requirements.txt
 │
+├── experiments/                   # MLflow tracking, bias/fairness evaluation, hyperparameter tuning
+│   ├── artifacts/
+│   ├── bias/
+│   ├── mlruns/
+│   ├── model_env/
+│   ├── reports/
+│   ├── homiehub_mlflow.py
+│   ├── prompt_mlflow.py
+│   ├── run_report.py
+│   ├── sensitivity_bias.py
+│   ├── tracker.py
+│   └── visualize.py
+│
 └── gcloud/functions/              # Cloud Functions for real-time recommendations
     ├── match_trigger/             # Event-driven matching function
     ├── embeddings_update/         # Periodic embedding refresh
     └── deployment/                # gcloud/terraform scripts
-
+    
 ```
-## **10. Bias Detection Layer**
 
-A dedicated fairness monitoring workflow evaluates recommendation outputs across demographic slices.
-Metrics include:
-
-- Representation balance
-- Ranking position parity
-- Statistical parity difference
-- Missing-embedding detection
-
-This ensures equitable access to housing recommendations for all users.
 ## 10. Bias & Experiment Layer
 
 The HomieHub pipeline includes a **dedicated layer for fairness monitoring and experiment tracking** to ensure transparent, unbiased, and reproducible recommendations.
@@ -294,14 +327,29 @@ The HomieHub pipeline includes a **dedicated layer for fairness monitoring and e
   - Missing-embedding detection
 - **Mitigation:** The system can resample or reweight data slices to reduce bias before generating recommendations.
 
+### Hyperparameter Tuning & Sensitivity Analysis
+
+* Grid search, random search, Bayesian optimization are used to tune model hyperparameters.
+* Sensitivity analysis tracks how feature changes or hyperparameter adjustments affect model performance.
+* SHAP or LIME is used to determine feature importance and explain model predictions.
+* Results are logged in MLflow and visualized for comparison between model versions.
+
 ### Experiment Tracking
 - **Objective:** Monitor model performance and experiment reproducibility.
 - **Tools:** : GitHub Actions
 - **Tracked Metrics:**
-  - Model evaluation metrics (e.g., accuracy, f1-score, precision, recall)
+  - Model evaluation metrics (accuracy, f1-score, precision, recall)
   - Slice-level performance metrics across sensitive features
   - Experiment configurations (hyperparameters, embeddings used, feature weights)
+
+![MLflow Experiments](assets/6-mlflow-logs.png)
+
 - **Benefits:** Enables comparison of model variants, reproducible experiments, and fair model selection.
+* Dockerized training environments ensure reproducibility.
+* Developers can compare multiple versions using MLflow UI dashboards.
+
+![MLflow Experiments](assets/7-artifacts.png)
+
 
 ### Integration with Pipeline
 1. When user/room data is updated, the system logs experiment metrics.
@@ -309,8 +357,29 @@ The HomieHub pipeline includes a **dedicated layer for fairness monitoring and e
 3. Bias metrics and model evaluation results are stored in MLflow dashboards.
 4. Developers can visualize and compare experiments and fairness metrics to make informed decisions.
 
+## **11. CI/CD Pipeline for Model Training**
 
-## **11. Conclusion**
+* GitHub Actions triggers:
+    - Model training on new commits affecting the pipeline
+    - Automated validation on hold-out datasets
+    - Bias checks across slices
+* If a model fails validation or bias thresholds, deployment is blocked
+* Successful models are automatically pushed to MLflow and GCP Artifact Registry
+* Rollback mechanism ensures previous stable model remains in production
+
+![](assets/9-notify-llm.png)
+
+## **12. ML Code Implementation**
+
+* Loading data from Firestore pipeline
+* Training multiple model architectures / hyperparameter tuning
+* Validating model performance (accuracy, F1, slice-level fairness)
+* Bias checking and mitigation
+* Pushing selected model to GCP Artifact Registry
+* Dockerized environment ensures reproducibility
+
+
+## **13. Conclusion**
 
 The HomieHub Model Pipeline provides a robust, scalable, and fairness-aware architecture for intelligent housing recommendations.
 Built with cloud-first principles and modern MLOps, it ensures reliability, explainability, and real-time performance across all services.
