@@ -2,7 +2,7 @@ name: Test Suite
 
 on:
   push:
-    branches: [ main, testing-ci-cd, testing-model-ci-cd ]
+    branches: [ main, testing-ci-cd, testing-model-ci-cd, testing-deployment]
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [ main ]
