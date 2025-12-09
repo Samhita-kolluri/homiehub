@@ -47,3 +47,31 @@ jobs:
     - name: Clean up
       if: always()
       run: rm -f data-pipeline/GCP_Account_Key.json
+
+    # Send email for this specific matrix run on success
+    - name: Send Email on Success
+      if: success()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: ${{ secrets.EMAIL_USER }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        from: "samhita.kolluri@gmail.com" 
+        subject: "HomieHub ETL Test Suite Passed ✅ - ${{ matrix.test-suite }}"
+        body: "The ${{ matrix.test-suite }} test suite passed successfully. Check GitHub Actions logs for details."
+        to: "samhita.kolluri@gmail.com"
+
+    # Send email for this specific matrix run on failure
+    - name: Send Email on Failure
+      if: failure()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: ${{ secrets.EMAIL_USER }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        from: "samhita.kolluri@gmail.com" 
+        subject: "HomieHub ETL Test Suite Failed ❌ - ${{ matrix.test-suite }}"
+        body: "The ${{ matrix.test-suite }} test suite failed. Check GitHub Actions logs for details."
+        to: "samhita.kolluri@gmail.com"

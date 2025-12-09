@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - testing-model-ci-cd
+      - testing-deployment
 
 env:
   PROJECT_ID: homiehub
@@ -82,3 +83,32 @@ jobs:
       run: |
         rm -f model-pipeline/llm-agent/GCP_Account_Key.json
         rm -f model-pipeline/llm-agent/.env
+
+    # -----------------------------
+    # Send Email Notifications
+    # -----------------------------
+    - name: Send Email on Success
+      if: success()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: ${{ secrets.EMAIL_USER }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        from: "samhita.kolluri@gmail.com"
+        subject: "LLM Agent Deployment Successful ✅"
+        body: "LLM Agent has been deployed to Cloud Run successfully."
+        to: "samhita.kolluri@gmail.com"
+
+    - name: Send Email on Failure
+      if: failure()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: ${{ secrets.EMAIL_USER }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        from: "samhita.kolluri@gmail.com"
+        subject: "LLM Agent Deployment Failed ❌"
+        body: "LLM Agent deployment to Cloud Run failed. Check the GitHub Actions logs for details."
+        to: "samhita.kolluri@gmail.com"
