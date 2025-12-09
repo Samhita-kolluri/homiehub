@@ -56,6 +56,7 @@ jobs:
         server_port: 465
         username: ${{ secrets.EMAIL_USER }}
         password: ${{ secrets.EMAIL_PASSWORD }}
+        from: "samhita.kolluri@gmail.com" 
         subject: "HomieHub ETL Test Suite Passed ✅"
         body: "All tests have passed successfully. Check the GitHub Actions logs for details."
         to: "samhita.kolluri@gmail.com"
@@ -68,6 +69,7 @@ jobs:
         server_port: 465
         username: ${{ secrets.EMAIL_USER }}
         password: ${{ secrets.EMAIL_PASSWORD }}
+        from: "samhita.kolluri@gmail.com" 
         subject: "HomieHub ETL Test Suite Failed ❌"
         body: "One or more tests failed. Check the GitHub Actions logs for details."
         to: "samhita.kolluri@gmail.com"
