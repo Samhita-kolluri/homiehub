@@ -2,7 +2,7 @@ name: Test Suite
 
 on:
   push:
-    branches: [ main, testing-ci-cd, testing-model-ci-cd ]
+    branches: [ main, testing-ci-cd, testing-model-ci-cd, testing-deployment ]
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [ main ]
@@ -41,6 +41,8 @@ jobs:
     
     - name: Run ${{ matrix.test-suite }} tests
       working-directory: data-pipeline
+      env:
+        TZ: 'America/New_York' 
       run: |
         pytest test/test_data_${{ matrix.test-suite }}.py -v --tb=short
     
@@ -48,7 +50,6 @@ jobs:
       if: always()
       run: rm -f data-pipeline/GCP_Account_Key.json
 
-    # Send email for this specific matrix run on success
     - name: Send Email on Success
       if: success()
       uses: dawidd6/action-send-mail@v3
@@ -57,12 +58,11 @@ jobs:
         server_port: 465
         username: ${{ secrets.EMAIL_USER }}
         password: ${{ secrets.EMAIL_PASSWORD }}
-        from: "samhita.kolluri@gmail.com" 
+        from: "samhita.kolluri@gmail.com"
         subject: "HomieHub ETL Test Suite Passed ✅ - ${{ matrix.test-suite }}"
         body: "The ${{ matrix.test-suite }} test suite passed successfully. Check GitHub Actions logs for details."
         to: "samhita.kolluri@gmail.com"
 
-    # Send email for this specific matrix run on failure
     - name: Send Email on Failure
       if: failure()
       uses: dawidd6/action-send-mail@v3
@@ -71,7 +71,7 @@ jobs:
         server_port: 465
         username: ${{ secrets.EMAIL_USER }}
         password: ${{ secrets.EMAIL_PASSWORD }}
-        from: "samhita.kolluri@gmail.com" 
+        from: "samhita.kolluri@gmail.com"
         subject: "HomieHub ETL Test Suite Failed ❌ - ${{ matrix.test-suite }}"
         body: "The ${{ matrix.test-suite }} test suite failed. Check GitHub Actions logs for details."
         to: "samhita.kolluri@gmail.com"
