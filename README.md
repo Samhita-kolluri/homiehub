@@ -214,14 +214,6 @@ git push origin feature/YourFeature
 
 Apache Airflow, Google Cloud Platform, MLflow, DVC, EvidentlyAI, MLOps course mentors, Open-source community
 
-## Contact & Collaboration
-
-For inquiries, collaboration, or contributions:
-- Open an [issue](https://github.com/homiehub/homiehub/issues) on GitHub
-- Here’s a polished, pro-level version for the **Contact** section:
-
----
-
 ## Contact
 
 For inquiries, collaboration, or contributions:
