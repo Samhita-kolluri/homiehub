@@ -19,9 +19,6 @@ The system follows a **5-lane microservices architecture** hosted on **GCP**:
 5. **Monitoring & Logging** – observability, email alerts, system health
 
 > For detailed system documentation, see [system_design.md](system_design.md)
-
-Absolutely! For a professional, pro-level README like this, a **Table of Contents** (ToC) at the top improves readability and navigation, especially on GitHub. You can auto-generate it using markdown links to headers. Here’s how it would look for your README:
-
 ---
 
 # Table of Contents
@@ -43,11 +40,6 @@ Absolutely! For a professional, pro-level README like this, a **Table of Content
 10. [License](#license)
 
 ---
-
-This can be placed **right after the main title and system architecture image** so users can quickly jump to any section.
-
-If you want, I can also **inject the ToC directly into your README markdown** with all proper links and indentation so it’s fully ready-to-use. Do you want me to do that?
-
 
 ## Project Structure
 ````
