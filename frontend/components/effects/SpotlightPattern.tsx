@@ -6,9 +6,10 @@ import { Sparkles, Heart, Users, Home, Star, Zap, Coffee, Music, Book, Gamepad2,
 
 interface SpotlightPatternProps {
   iconCount?: number;
+  showIcons?: boolean;
 }
 
-export function SpotlightPattern({ iconCount = 800 }: SpotlightPatternProps) {
+export function SpotlightPattern({ iconCount = 800, showIcons = true }: SpotlightPatternProps) {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [patternIcons, setPatternIcons] = useState<Array<{Icon: any, x: string, y: string, rotation: number}>>([]);
 
@@ -36,6 +37,11 @@ export function SpotlightPattern({ iconCount = 800 }: SpotlightPatternProps) {
   }, []);
 
   useEffect(() => {
+    if (!showIcons) {
+      setPatternIcons([]);
+      return;
+    }
+
     const icons = [Sparkles, Heart, Users, Home, Star, Zap, Coffee, Music, Book, Gamepad2, 
                    Dumbbell, Palette, Wifi, Utensils, TrendingUp, Shield, Clock, MapPin, 
                    MessageCircle, Key, DollarSign, Award, Target, Flame, Cloud, Moon, Sun, 
@@ -56,7 +62,7 @@ export function SpotlightPattern({ iconCount = 800 }: SpotlightPatternProps) {
       });
     }
     setPatternIcons(positions);
-  }, [iconCount]);
+  }, [iconCount, showIcons]);
 
   return (
     <>

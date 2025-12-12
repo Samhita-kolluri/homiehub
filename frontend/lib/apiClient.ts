@@ -25,6 +25,34 @@ export function isAuthenticated(): boolean {
   return !!getAccessToken();
 }
 
+// Decode JWT token to extract user_id
+function decodeJWT(token: string): any {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Failed to decode JWT:', error);
+    return null;
+  }
+}
+
+export function getUserIdFromToken(): string | null {
+  const token = getAccessToken();
+  if (!token) return null;
+  
+  const decoded = decodeJWT(token);
+  // JWT tokens typically use 'sub' (subject) for user identifier
+  // Adjust the field name based on your backend's JWT structure
+  return decoded?.sub || decoded?.user_id || decoded?.id || null;
+}
+
 interface FetchOptions extends RequestInit {
   requiresAuth?: boolean;
 }
@@ -34,11 +62,16 @@ async function apiFetch<T>(
   options: FetchOptions = {}
 ): Promise<T> {
   const { requiresAuth = false, ...fetchOptions } = options;
-
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(fetchOptions.headers as Record<string, string> || {}),
   };
+
+  const isFormData =
+    typeof FormData !== "undefined" && fetchOptions.body instanceof FormData;
+
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (requiresAuth) {
     const token = getAccessToken();
@@ -59,6 +92,16 @@ async function apiFetch<T>(
     // Clear user email from session
     if (typeof window !== "undefined") {
       sessionStorage.removeItem('user_email');
+      try {
+        const url = new URL(window.location.href);
+        if (url.pathname !== "/login") {
+          url.pathname = "/login";
+          url.searchParams.set("reason", "expired");
+          window.location.href = url.toString();
+        }
+      } catch {
+        window.location.href = "/login?reason=expired";
+      }
     }
     throw new Error("UNAUTHORIZED");
   }
@@ -88,6 +131,22 @@ export const apiClient = {
     });
   },
 
+  // Current user endpoints
+  getCurrentUser: async () => {
+    return apiFetch(`${BASE_URLS.user}/users/me`, {
+      method: "GET",
+      requiresAuth: true,
+    });
+  },
+
+  updateUserPreferences: async (data: any) => {
+    return apiFetch(`${BASE_URLS.user}/users/me`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+      requiresAuth: true,
+    });
+  },
+
   // Recommendations endpoint
   getRecommendations: async (filters: any = {}) => {
     return apiFetch(`${BASE_URLS.recommendation}/recommendation`, {
@@ -97,11 +156,46 @@ export const apiClient = {
     });
   },
 
-  // Room endpoints
-  postRoom: async (data: any) => {
-    return apiFetch(`${BASE_URLS.user}/rooms`, {
+  // Time-sorted recommendations endpoint
+  getRecommendationsByTime: async () => {
+    return apiFetch(`${BASE_URLS.recommendation}/recommendation/time`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({}),
+      requiresAuth: true,
+    });
+  },
+
+  // Room endpoints
+  postRoom: async (data: { room_data: any; photos?: File[] }) => {
+    const formData = new FormData();
+    formData.append("room_data", JSON.stringify(data.room_data));
+
+    if (data.photos && Array.isArray(data.photos)) {
+      data.photos.forEach((file) => {
+        if (file instanceof File) {
+          formData.append("photos", file);
+        }
+      });
+    }
+
+    return apiFetch(`${BASE_URLS.user}/rooms/register`, {
+      method: "POST",
+      body: formData,
+      requiresAuth: true,
+    });
+  },
+
+  getMyRooms: async () => {
+    return apiFetch(`${BASE_URLS.user}/rooms/me`, {
+      method: "GET",
+      requiresAuth: true,
+    });
+  },
+
+  deleteRoom: async (roomId: string) => {
+    return apiFetch(`${BASE_URLS.user}/rooms/me`, {
+      method: "DELETE",
+      body: JSON.stringify({ room_id: roomId }),
       requiresAuth: true,
     });
   },

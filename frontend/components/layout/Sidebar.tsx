@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Home, PlusCircle, SlidersHorizontal, LogOut } from "lucide-react";
+import { Home, PlusCircle, SlidersHorizontal, LogOut, Target, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { clearAccessToken } from "@/lib/apiClient";
 import { useRouter } from "next/navigation";
@@ -19,7 +20,8 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const menuItems = [
     { id: "recommendations", label: "Recommendations", icon: Home },
     { id: "post-ad", label: "Find Your Homie", icon: PlusCircle },
-    { id: "filters", label: "Filters", icon: SlidersHorizontal },
+    // Filters and Relevance moved into the recommendations page header
+    { id: "my-listings", label: "Find Your Ads", icon: ClipboardList },
   ];
 
   const handleLogout = () => {
@@ -33,10 +35,18 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       <div className="p-6 border-b border-gray-200 dark:border-gray-800">
         <Link href="/">
           <motion.div
-            className="text-xl font-bold text-foreground dark:text-white cursor-pointer"
+            className="flex items-center gap-2 text-xl font-bold text-foreground dark:text-white cursor-pointer"
             whileHover={{ scale: 1.05 }}
           >
-            HomieHub
+            <Image
+              src="/logohomiehub3.png"
+              alt="HomieHub logo"
+              width={32}
+              height={32}
+              className="rounded-md"
+              priority
+            />
+            <span>HomieHub</span>
           </motion.div>
         </Link>
       </div>

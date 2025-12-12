@@ -31,9 +31,31 @@ export function ChatWidget() {
 
     try {
       const response: any = await apiClient.sendChatMessage(userMessage);
+      const matches = response?.response?.matches ?? [];
+      const totalResults =
+        typeof response?.response?.total_results === "number"
+          ? response.response.total_results
+          : Array.isArray(matches)
+          ? matches.length
+          : 0;
+
+      // Broadcast matches to the main recommendations page
+      if (typeof window !== "undefined" && Array.isArray(matches)) {
+        window.dispatchEvent(
+          new CustomEvent("homiehub:chat-matches", {
+            detail: { matches },
+          })
+        );
+      }
+
+      const summaryMessage =
+        totalResults > 0
+          ? `I have ${totalResults} result${totalResults === 1 ? "" : "s"} for you. I've updated your recommendations above.`
+          : "I couldn't find any matching rooms for that. Try adjusting your criteria.";
+
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: response.response },
+        { role: "assistant", content: summaryMessage },
       ]);
     } catch (error: any) {
       if (error.message === "UNAUTHORIZED") {

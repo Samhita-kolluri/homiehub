@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { apiClient, setAccessToken } from "@/lib/apiClient";
@@ -10,13 +10,20 @@ import { SpotlightPattern } from "@/components/effects/SpotlightPattern";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
   });
   const [errors, setErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState("");
+  const [apiError, setApiError] = useState(() => {
+    const reason = searchParams?.get("reason");
+    if (reason === "expired") {
+      return "Your session has expired. Please sign in again.";
+    }
+    return "";
+  });
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
