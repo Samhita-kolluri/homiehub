@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { isAuthenticated, clearAccessToken } from "@/lib/apiClient";
 import { cn } from "@/lib/utils";
-import { User, LogOut, Moon, Sun } from "lucide-react";
+import { User, LogOut, Moon, Sun, SlidersHorizontal } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { UserPreferencesModal } from "@/components/modals/UserPreferencesModal";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -20,6 +22,7 @@ export function Navbar() {
   const profileRef = useRef<HTMLDivElement>(null);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showNavbar, setShowNavbar] = useState(true);
+  const [showPreferences, setShowPreferences] = useState(false);
   
   // Use theme only after component is mounted
   let theme = "light";
@@ -91,19 +94,30 @@ export function Navbar() {
   const isAppPage = pathname.startsWith("/app");
 
   return (
-    <nav
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-        isScrolled ? "bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-md shadow-sm" : "bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-sm",
-        showNavbar ? "translate-y-0" : "-translate-y-full",
-        "border-b border-gray-200 dark:border-gray-700"
-      )}
-    >
-      <div className="max-w-7xl mx-auto px-6 py-4">
+    <>
+      <nav
+        className={cn(
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+          isScrolled ? "bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-md shadow-sm" : "bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-sm",
+          showNavbar ? "translate-y-0" : "-translate-y-full",
+          "border-b border-gray-200 dark:border-gray-700"
+        )}
+      >
+      <div className="w-full px-4 py-4">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
-            <div className="text-2xl font-bold text-foreground dark:text-white">
-              HomieHub
+            <div className="flex items-center gap-2">
+              <Image
+                src="/logohomiehub3.png"
+                alt="HomieHub logo"
+                width={32}
+                height={32}
+                className="rounded-md"
+                priority
+              />
+              <span className="text-2xl font-bold text-foreground dark:text-white">
+                HomieHub
+              </span>
             </div>
           </Link>
 
@@ -165,8 +179,18 @@ export function Navbar() {
                         <p className="text-sm font-medium text-foreground dark:text-white truncate">{userEmail}</p>
                       </div>
                       <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          setShowPreferences(true);
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm text-foreground dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2"
+                      >
+                        <SlidersHorizontal className="w-4 h-4" />
+                        <span>Preferences</span>
+                      </button>
+                      <button
                         onClick={handleSignOut}
-                        className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2"
+                        className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700 mt-1"
                       >
                         <LogOut className="w-4 h-4" />
                         <span>Sign Out</span>
@@ -193,6 +217,10 @@ export function Navbar() {
           </div>
         </div>
       </div>
-    </nav>
+      </nav>
+      {showPreferences && (
+        <UserPreferencesModal onClose={() => setShowPreferences(false)} />
+      )}
+    </>
   );
 }

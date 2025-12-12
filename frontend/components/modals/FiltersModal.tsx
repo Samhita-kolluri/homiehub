@@ -13,30 +13,65 @@ import {
   UTILITIES_OPTIONS,
 } from "@/lib/types";
 
+const LOCATION_OPTIONS = [
+  "Boston",
+  "Downtown Boston",
+  "Back Bay",
+  "South End",
+  "North End",
+  "Beacon Hill",
+  "Fenway",
+  "South Boston",
+  "East Boston",
+  "Charlestown",
+  "Roxbury",
+  "Jamaica Plain",
+  "Mission Hill",
+  "Cambridge",
+  "Central Square",
+  "Kendall Square",
+  "Harvard Square",
+  "Somerville",
+  "Union Square",
+  "Davis Square",
+  "Brookline",
+  "Coolidge Corner",
+  "Allston",
+  "Brighton"
+] as const;
+
 interface FiltersModalProps {
   onClose: () => void;
   onApply: (filters: any) => void;
+  onClearFilters?: () => void;
+  initialFilters?: any;
 }
 
-export function FiltersModal({ onClose, onApply }: FiltersModalProps) {
-  const [filters, setFilters] = useState<any>({
+export function FiltersModal({ onClose, onApply, onClearFilters, initialFilters }: FiltersModalProps) {
+  const defaultFilters = {
     max_rent: 2000,
     limit: 20,
-    gender_pref: "Any",
-    preferred_locations: [],
-    room_type_preference: "Any",
+    location: [],
+    flatmate_gender: "Any",
+    room_type: "Any",
     attached_bathroom: "Any",
+    available_from: "",
+    lease_duration_months: "",
     lifestyle_food: "",
     lifestyle_alcohol: "",
     lifestyle_smoke: "",
-    utilities_preference: [],
-    move_in_date: "",
-    bio: "",
-    interests: [],
-  });
+    utilities_included: [],
+  };
 
-  const [locationInput, setLocationInput] = useState("");
-  const [interestInput, setInterestInput] = useState("");
+  // Merge initialFilters with defaultFilters to ensure all properties exist
+  const mergedFilters = initialFilters ? { ...defaultFilters, ...initialFilters } : defaultFilters;
+  // Convert location string back to array if it's a string
+  if (mergedFilters.location && typeof mergedFilters.location === 'string') {
+    mergedFilters.location = [mergedFilters.location];
+  }
+  const [filters, setFilters] = useState<any>(mergedFilters);
+
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [errors, setErrors] = useState<any>({});
 
   const handleChange = (e: any) => {
@@ -59,40 +94,19 @@ export function FiltersModal({ onClose, onApply }: FiltersModalProps) {
   };
 
   const addLocation = () => {
-    if (locationInput.trim() && !filters.preferred_locations.includes(locationInput.trim())) {
+    if (selectedLocation && !filters.location.includes(selectedLocation)) {
       setFilters((prev: any) => ({
         ...prev,
-        preferred_locations: [...prev.preferred_locations, locationInput.trim()],
+        location: [...prev.location, selectedLocation],
       }));
-      setLocationInput("");
+      setSelectedLocation("");
     }
   };
 
   const removeLocation = (loc: string) => {
     setFilters((prev: any) => ({
       ...prev,
-      preferred_locations: prev.preferred_locations.filter((l: string) => l !== loc),
-    }));
-  };
-
-  const addInterest = () => {
-    if (
-      interestInput.trim() &&
-      !filters.interests.includes(interestInput.trim()) &&
-      filters.interests.length < 20
-    ) {
-      setFilters((prev: any) => ({
-        ...prev,
-        interests: [...prev.interests, interestInput.trim()],
-      }));
-      setInterestInput("");
-    }
-  };
-
-  const removeInterest = (interest: string) => {
-    setFilters((prev: any) => ({
-      ...prev,
-      interests: prev.interests.filter((i: string) => i !== interest),
+      location: prev.location.filter((l: string) => l !== loc),
     }));
   };
 
@@ -103,51 +117,24 @@ export function FiltersModal({ onClose, onApply }: FiltersModalProps) {
     const cleanFilters: any = {};
     if (filters.max_rent && filters.max_rent > 0) cleanFilters.max_rent = filters.max_rent;
     if (filters.limit && filters.limit > 0) cleanFilters.limit = filters.limit;
-    if (filters.gender_pref && filters.gender_pref !== "Any") cleanFilters.gender_pref = filters.gender_pref;
-    if (filters.preferred_locations.length > 0) cleanFilters.preferred_locations = filters.preferred_locations;
-    if (filters.room_type_preference && filters.room_type_preference !== "Any") cleanFilters.room_type_preference = filters.room_type_preference;
+    // Only send location if explicitly selected
+    if (filters.location.length > 0) cleanFilters.location = filters.location;
+    if (filters.flatmate_gender && filters.flatmate_gender !== "Any") cleanFilters.flatmate_gender = filters.flatmate_gender;
+    if (filters.room_type && filters.room_type !== "Any") cleanFilters.room_type = filters.room_type;
     if (filters.attached_bathroom && filters.attached_bathroom !== "Any") cleanFilters.attached_bathroom = filters.attached_bathroom;
+    if (filters.available_from) cleanFilters.available_from = filters.available_from;
+    if (filters.lease_duration_months) cleanFilters.lease_duration_months = parseInt(filters.lease_duration_months);
     if (filters.lifestyle_food) cleanFilters.lifestyle_food = filters.lifestyle_food;
     if (filters.lifestyle_alcohol) cleanFilters.lifestyle_alcohol = filters.lifestyle_alcohol;
     if (filters.lifestyle_smoke) cleanFilters.lifestyle_smoke = filters.lifestyle_smoke;
-    if (filters.utilities_preference.length > 0) cleanFilters.utilities_preference = filters.utilities_preference;
-    if (filters.move_in_date) cleanFilters.move_in_date = filters.move_in_date;
-    if (filters.bio && filters.bio.length >= 10) cleanFilters.bio = filters.bio;
-    if (filters.interests.length > 0) cleanFilters.interests = filters.interests;
-
-    const result = filterSchema.safeParse(cleanFilters);
-    if (!result.success) {
-      const fieldErrors: any = {};
-      result.error.errors.forEach((err) => {
-        if (err.path[0]) {
-          fieldErrors[err.path[0]] = err.message;
-        }
-      });
-      setErrors(fieldErrors);
-      return;
-    }
+    if (filters.utilities_included.length > 0) cleanFilters.utilities_included = filters.utilities_included;
 
     onApply(cleanFilters);
   };
 
   const handleClearAll = () => {
-    setFilters({
-      max_rent: 2000,
-      limit: 20,
-      gender_pref: "Any",
-      preferred_locations: [],
-      room_type_preference: "Any",
-      attached_bathroom: "Any",
-      lifestyle_food: "",
-      lifestyle_alcohol: "",
-      lifestyle_smoke: "",
-      utilities_preference: [],
-      move_in_date: "",
-      bio: "",
-      interests: [],
-    });
-    setLocationInput("");
-    setInterestInput("");
+    setFilters(defaultFilters);
+    setSelectedLocation("");
     setErrors({});
   };
 
@@ -204,13 +191,13 @@ export function FiltersModal({ onClose, onApply }: FiltersModalProps) {
               </div>
             </div>
 
-            {/* Gender & Room Type */}
+            {/* Flatmate Gender & Lease Duration */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="label">Gender Preference</label>
+                <label className="label">Flatmate Gender</label>
                 <select
-                  name="gender_pref"
-                  value={filters.gender_pref}
+                  name="flatmate_gender"
+                  value={filters.flatmate_gender}
                   onChange={handleChange}
                   className="input"
                 >
@@ -220,10 +207,27 @@ export function FiltersModal({ onClose, onApply }: FiltersModalProps) {
                 </select>
               </div>
               <div>
+                <label className="label">Lease Duration (months)</label>
+                <input
+                  type="number"
+                  name="lease_duration_months"
+                  value={filters.lease_duration_months}
+                  onChange={handleChange}
+                  className="input"
+                  min="1"
+                  max="24"
+                  placeholder="e.g., 12"
+                />
+              </div>
+            </div>
+
+            {/* Room Type & Attached Bathroom */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <label className="label">Room Type</label>
                 <select
-                  name="room_type_preference"
-                  value={filters.room_type_preference}
+                  name="room_type"
+                  value={filters.room_type}
                   onChange={handleChange}
                   className="input"
                 >
@@ -233,10 +237,6 @@ export function FiltersModal({ onClose, onApply }: FiltersModalProps) {
                   ))}
                 </select>
               </div>
-            </div>
-
-            {/* Attached Bathroom & Move-in Date */}
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="label">Attached Bathroom</label>
                 <select
@@ -250,17 +250,18 @@ export function FiltersModal({ onClose, onApply }: FiltersModalProps) {
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="label">Move-in Date</label>
-                <input
-                  type="date"
-                  name="move_in_date"
-                  value={filters.move_in_date}
-                  onChange={handleChange}
-                  className="input"
-                />
-                {errors.move_in_date && <p className="text-red-500 text-xs mt-1">{errors.move_in_date}</p>}
-              </div>
+            </div>
+
+            {/* Available From (Move-in Date) */}
+            <div>
+              <label className="label">Available From</label>
+              <input
+                type="date"
+                name="available_from"
+                value={filters.available_from}
+                onChange={handleChange}
+                className="input"
+              />
             </div>
 
             {/* Lifestyle */}
@@ -313,24 +314,27 @@ export function FiltersModal({ onClose, onApply }: FiltersModalProps) {
             <div>
               <label className="label">Preferred Locations</label>
               <div className="flex gap-2 mb-2">
-                <input
-                  type="text"
-                  value={locationInput}
-                  onChange={(e) => setLocationInput(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addLocation())}
+                <select
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
                   className="input flex-1"
-                  placeholder="Add location"
-                />
+                >
+                  <option value="">Select a location</option>
+                  {LOCATION_OPTIONS.map((loc) => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   onClick={addLocation}
                   className="btn-secondary px-4"
+                  disabled={!selectedLocation}
                 >
                   Add
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {filters.preferred_locations.map((loc: string) => (
+                {filters.location.map((loc: string) => (
                   <span key={loc} className="pill-accent cursor-pointer" onClick={() => removeLocation(loc)}>
                     {loc} ×
                   </span>
@@ -340,15 +344,15 @@ export function FiltersModal({ onClose, onApply }: FiltersModalProps) {
 
             {/* Utilities */}
             <div>
-              <label className="label">Utilities Preference</label>
+              <label className="label">Utilities Included</label>
               <div className="flex flex-wrap gap-2">
                 {UTILITIES_OPTIONS.map((util) => {
-                  const selected = filters.utilities_preference.includes(util);
+                  const selected = filters.utilities_included.includes(util);
                   return (
                     <button
                       key={util}
                       type="button"
-                      onClick={() => handleMultiSelect("utilities_preference", util)}
+                      onClick={() => handleMultiSelect("utilities_included", util)}
                       className={`pill ${selected ? "pill-selected" : ""}`}
                       aria-pressed={selected}
                       style={
@@ -363,62 +367,24 @@ export function FiltersModal({ onClose, onApply }: FiltersModalProps) {
                 })}
               </div>
             </div>
-
-            {/* Bio */}
-            <div>
-              <label className="label">Bio (optional)</label>
-              <textarea
-                name="bio"
-                value={filters.bio}
-                onChange={handleChange}
-                className="input min-h-[80px]"
-                placeholder="Tell us about your preferences..."
-              />
-              {errors.bio && <p className="text-red-500 text-xs mt-1">{errors.bio}</p>}
-            </div>
-
-            {/* Interests */}
-            <div>
-              <label className="label">Interests (max 20)</label>
-              <div className="flex gap-2 mb-2">
-                <input
-                  type="text"
-                  value={interestInput}
-                  onChange={(e) => setInterestInput(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addInterest())}
-                  className="input flex-1"
-                  placeholder="Add interest"
-                  maxLength={50}
-                />
-                <button
-                  type="button"
-                  onClick={addInterest}
-                  className="btn-secondary px-4"
-                  disabled={filters.interests.length >= 20}
-                >
-                  Add
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {filters.interests.map((interest: string) => (
-                  <span key={interest} className="pill-accent cursor-pointer" onClick={() => removeInterest(interest)}>
-                    {interest} ×
-                  </span>
-                ))}
-              </div>
-              {errors.interests && <p className="text-red-500 text-xs mt-1">{errors.interests}</p>}
-            </div>
           </div>
         </div>
 
         <div className="p-6 border-t border-gray-200 flex justify-between">
           <motion.button
-            onClick={handleClearAll}
+            onClick={() => {
+              handleClearAll();
+              // Apply with empty filters to show all results
+              onApply({
+                max_rent: 2000,
+                limit: 20,
+              });
+            }}
             className="btn-secondary"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            Clear All
+            Clear Filters
           </motion.button>
           <div className="flex gap-3">
             <button onClick={onClose} className="btn-secondary">

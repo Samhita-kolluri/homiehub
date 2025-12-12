@@ -140,10 +140,17 @@ export const GENDER_OPTIONS = ['Male', 'Female', 'Non-binary', 'Prefer not to sa
 export const FLATMATE_GENDER_OPTIONS = ['Male', 'Female', 'Non-binary', 'Mixed', 'Any'] as const;
 export const ROOM_TYPE_OPTIONS = ['Shared', 'Private', 'Studio'] as const;
 export const BATHROOM_OPTIONS = ['Yes', 'No', 'Any'] as const;
-export const LIFESTYLE_FOOD_OPTIONS = ['Vegetarian', 'Vegan', 'Non-vegetarian', 'Everything', 'Halal', 'Kosher'] as const;
+export const LIFESTYLE_FOOD_OPTIONS = ['Vegetarian', 'Vegan', 'Everything'] as const;
 export const LIFESTYLE_ALCOHOL_OPTIONS = ['Never', 'Rarely', 'Occasionally', 'Regularly'] as const;
-export const LIFESTYLE_SMOKE_OPTIONS = ['Yes', 'No', 'Occasionally', 'Outside only'] as const;
+export const LIFESTYLE_SMOKE_OPTIONS = ['Yes', 'No', 'Outside only'] as const;
 export const UTILITIES_OPTIONS = ['Heat', 'Water', 'Gas', 'Electricity', 'Internet', 'Trash', 'Sewer', 'Cable'] as const;
+export const LOCATION_OPTIONS = [
+  'Boston', 'Downtown Boston', 'Back Bay', 'South End', 'North End', 'Beacon Hill',
+  'Fenway', 'South Boston', 'East Boston', 'Charlestown', 'Roxbury', 'Jamaica Plain',
+  'Mission Hill', 'Cambridge', 'Central Square', 'Kendall Square', 'Harvard Square',
+  'Somerville', 'Union Square', 'Davis Square', 'Brookline', 'Coolidge Corner',
+  'Allston', 'Brighton'
+] as const;
 export const AMENITIES_OPTIONS = [
   'WiFi', 'Parking', 'Laundry in unit', 'Laundry in building', 'Gym', 'Pool', 
   'Elevator', 'Doorman', 'Pet-friendly', 'Air conditioning', 'Heating', 

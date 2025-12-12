@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
-import { postAdSchema, type PostAdFormData } from "@/lib/validation";
+import { postAdSchema } from "@/lib/validation";
 import {
   FLATMATE_GENDER_OPTIONS,
   ROOM_TYPE_OPTIONS,
@@ -40,13 +40,13 @@ export function PostAdModal({ onClose, onSuccess }: PostAdModalProps) {
     description: "",
     amenities: [],
     available_from: new Date().toISOString().split("T")[0],
-    photos: [],
   });
 
   const [errors, setErrors] = useState<any>({});
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
 
   const handleChange = (e: any) => {
     const { name, value, type } = e.target;
@@ -68,12 +68,34 @@ export function PostAdModal({ onClose, onSuccess }: PostAdModalProps) {
     });
   };
 
+  const handlePhotoUrlChange = (index: number, value: string) => {
+    setFormData((prev: any) => {
+      const photos = [...(prev.photos || [])];
+      photos[index] = value;
+      return { ...prev, photos };
+    });
+    if (errors.photos) {
+      setErrors((prev: any) => ({ ...prev, photos: undefined }));
+    }
+    setApiError("");
+  };
+
+  const handlePhotosSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    setPhotoFiles(files);
+    if (errors.photos) {
+      setErrors((prev: any) => ({ ...prev, photos: undefined }));
+    }
+    setApiError("");
+  };
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setErrors({});
     setApiError("");
 
-    const result = postAdSchema.safeParse(formData);
+    const coreSchema = postAdSchema.omit({ photos: true });
+    const result = coreSchema.safeParse(formData);
     if (!result.success) {
       const fieldErrors: any = {};
       result.error.errors.forEach((err) => {
@@ -87,7 +109,8 @@ export function PostAdModal({ onClose, onSuccess }: PostAdModalProps) {
 
     setIsLoading(true);
     try {
-      await apiClient.postRoom(formData);
+      const roomData = result.data;
+      await apiClient.postRoom({ room_data: roomData, photos: photoFiles });
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
@@ -386,6 +409,29 @@ export function PostAdModal({ onClose, onSuccess }: PostAdModalProps) {
                 placeholder="Describe the room, location, and ideal roommate..."
               />
               {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+            </div>
+
+            {/* Photos */}
+            <div>
+              <label className="label">Photos (optional)</label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                Upload photos from your device. These will appear in a gallery when someone expands your listing.
+              </p>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePhotosSelected}
+                className="block w-full text-sm text-gray-700 dark:text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-accent/10 file:text-accent hover:file:bg-accent/20"
+              />
+              {photoFiles.length > 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {photoFiles.length} photo{photoFiles.length === 1 ? "" : "s"} selected
+                </p>
+              )}
+              {errors.photos && (
+                <p className="text-red-500 text-xs mt-1">{errors.photos}</p>
+              )}
             </div>
 
             {apiError && (
